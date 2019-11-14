@@ -301,6 +301,12 @@ server {
 }
 {{ end }}
 
+geo $good_user {
+	default 0;
+	1.2.3.4 1;
+	5.6.7.8 1;
+}
+
 server {
 	client_max_body_size 100M;
 	server_name {{ $host }};
@@ -372,7 +378,71 @@ server {
 	include /etc/nginx/vhost.d/default;
 	{{ end }}
 
+	error_page 418 = @btcpaycommon;
+
 	location / {
+		location /Account {
+			if ($good_user) {
+				return 418;
+			}
+			deny all;
+		}
+		location /server {
+			if ($good_user) {
+				return 418;
+			}
+			deny all;
+		}
+		location /stores {
+			if ($good_user) {
+				return 418;
+			}
+			deny all;
+		}
+		location /apps {
+			if ($good_user) {
+				return 418;
+			}
+			deny all;
+		}
+		location /wallets {
+			if ($good_user) {
+				return 418;
+			}
+			deny all;
+		}
+		location /invoices {
+			if ($good_user) {
+				return 418;
+			}
+			deny all;
+		}
+		location /payment-requests {
+			if ($good_user) {
+				return 418;
+			}
+			deny all;
+		}
+		location /Manage {
+			if ($good_user) {
+				return 418;
+			}
+			deny all;
+		}
+
+		if ($good_user) {
+			return 418;
+		}
+		if ($request_method = GET) {
+			return 418;
+		}
+		if ($request_method = HEAD) {
+			return 418;
+		}
+		deny all;
+	}
+
+	location @btcpaycommon {
 		{{ if eq $proto "uwsgi" }}
 		include uwsgi_params;
 		uwsgi_pass {{ trim $proto }}://{{ trim $upstream_name }};
@@ -394,6 +464,7 @@ server {
 		include /etc/nginx/vhost.d/default_location;
 		{{ end }}
 	}
+
 	{{ template "redirects" (dict "HostName" $host_name "Containers" $) }}
 }
 
