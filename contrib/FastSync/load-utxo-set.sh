@@ -40,7 +40,9 @@ if ! [[ "$UTXO_DOWNLOAD_LINK" ]] && ! [[ "$TAR_FILE" ]]; then
     exit 1
 fi
 
+BITCOIN_DATA_DIR="$(docker volume inspect generated_bitcoin_datadir -f "{{.Mountpoint}}" 2>/dev/null)" || \
 BITCOIN_DATA_DIR="/var/lib/docker/volumes/generated_bitcoin_datadir/_data"
+
 [ ! -d "$BITCOIN_DATA_DIR" ] && mkdir -p "$BITCOIN_DATA_DIR"
 
 if [[ "$TAR_FILE" ]]; then
@@ -93,8 +95,18 @@ if ! tar -xf "$TAR_FILE" -C "$BITCOIN_DATA_DIR"; then
 fi
 $IS_DOWNLOADED && rm -f "$TAR_FILE"
 
+BTCPAY_DATA_DIR="$(docker volume inspect generated_btcpay_datadir -f "{{.Mountpoint}}" 2>/dev/null)" || \
 BTCPAY_DATA_DIR="/var/lib/docker/volumes/generated_btcpay_datadir/_data"
+
 [ ! -d "$BTCPAY_DATA_DIR" ] && mkdir -p "$BTCPAY_DATA_DIR"
 echo "$TAR_NAME" > "$BTCPAY_DATA_DIR/FastSynced"
 
-echo "Successfully downloaded and extracted, you can run btcpay again (btcpay-up.sh)"
+echo "Successfully downloaded and extracted."
+
+if docker volume inspect generated_bitcoin_wallet_datadir &>/dev/null; then
+  echo -e '\033[33mWARNING: You need to delete your Bitcoin Core wallet before restarting with "btcpay-up.sh", or bitcoin core will fail to start.\033[0m'
+  echo -e '\033[33mDo not delete the wallet if you have any funds on it. (For example, this may be the case if you use Eclair or FullyNoded to receive funds)\033[0m'
+  echo -e '\033[33mHow to proceed: If you agree to delete your Bitcoin Core wallet, run "docker volume rm generated_bitcoin_wallet_datadir"\033[0m'
+else
+  echo "You can now run btcpay again (btcpay-up.sh)"
+fi
